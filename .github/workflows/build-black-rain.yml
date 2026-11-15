@@ -38,7 +38,7 @@ jobs:
         working-directory: build-source/Black_Rain_Android_Project
         run: |
           keytool -genkeypair -v \
-            -keystore release.keystore \
+            -keystore app/release.keystore \
             -storepass temporary-build-password \
             -keypass temporary-build-password \
             -alias blackrain \
