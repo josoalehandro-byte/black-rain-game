@@ -1,5 +1,4 @@
-
-name: Build BLACK RAIN GAME APK
+name: Build BLACK RAIN GAME Release APK
 
 on:
   workflow_dispatch:
@@ -12,7 +11,6 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
-
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -36,7 +34,18 @@ jobs:
           unzip -o BLACK_RAIN_GAME_GITHUB_READY.zip -d build-source
           test -f build-source/Black_Rain_Android_Project/app/build.gradle.kts
 
-      - name: Align Java target to Kotlin 17
+      - name: Create temporary signing key
+        working-directory: build-source/Black_Rain_Android_Project
+        run: |
+          keytool -genkeypair -v \
+            -keystore release.keystore \
+            -storepass temporary-build-password \
+            -keypass temporary-build-password \
+            -alias blackrain \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=BLACK RAIN GAME, OU=Android, O=BLACK RAIN, L=Kyiv, ST=Kyiv, C=UA"
+
+      - name: Configure signed Release build
         working-directory: build-source/Black_Rain_Android_Project
         run: |
           cat >> app/build.gradle.kts <<'EOF'
@@ -46,20 +55,31 @@ jobs:
                   sourceCompatibility = JavaVersion.VERSION_17
                   targetCompatibility = JavaVersion.VERSION_17
               }
+              signingConfigs {
+                  create("release") {
+                      storeFile = file("release.keystore")
+                      storePassword = "temporary-build-password"
+                      keyAlias = "blackrain"
+                      keyPassword = "temporary-build-password"
+                  }
+              }
+              buildTypes {
+                  getByName("release") {
+                      signingConfig = signingConfigs.getByName("release")
+                      isMinifyEnabled = false
+                      isDebuggable = false
+                  }
+              }
           }
           EOF
 
-          echo "Checking Java and Kotlin settings:"
-          grep -nE 'jvmTarget|sourceCompatibility|targetCompatibility' app/build.gradle.kts || true
-
-      - name: Build debug APK
+      - name: Build signed Release APK
         working-directory: build-source/Black_Rain_Android_Project
-        run: gradle --no-daemon assembleDebug
+        run: gradle --no-daemon assembleRelease
 
-      - name: Upload APK
+      - name: Upload Release APK
         uses: actions/upload-artifact@v4
         with:
-          name: BLACK-RAIN-GAME-APK
-          path: build-source/Black_Rain_Android_Project/app/build/outputs/apk/debug/app-debug.apk
+          name: BLACK-RAIN-GAME-RELEASE-APK
+          path: build-source/Black_Rain_Android_Project/app/build/outputs/apk/release/app-release.apk
           if-no-files-found: error
-          
