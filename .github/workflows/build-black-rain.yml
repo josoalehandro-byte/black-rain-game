@@ -1,3 +1,4 @@
+
 name: Build BLACK RAIN GAME APK
 
 on:
@@ -11,6 +12,7 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     env:
       ANDROID_HOME: /usr/local/lib/android/sdk
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
@@ -30,7 +32,25 @@ jobs:
           /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/usr/local/lib/android/sdk 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Extract Android project archive
-        run: unzip -o BLACK_RAIN_GAME_GITHUB_READY.zip -d build-source
+        run: |
+          unzip -o BLACK_RAIN_GAME_GITHUB_READY.zip -d build-source
+          test -f build-source/Black_Rain_Android_Project/app/build.gradle.kts
+
+      - name: Align Java target to Kotlin 17
+        working-directory: build-source/Black_Rain_Android_Project
+        run: |
+          cat >> app/build.gradle.kts <<'EOF'
+
+          android {
+              compileOptions {
+                  sourceCompatibility = JavaVersion.VERSION_17
+                  targetCompatibility = JavaVersion.VERSION_17
+              }
+          }
+          EOF
+
+          echo "Checking Java and Kotlin settings:"
+          grep -nE 'jvmTarget|sourceCompatibility|targetCompatibility' app/build.gradle.kts || true
 
       - name: Build debug APK
         working-directory: build-source/Black_Rain_Android_Project
