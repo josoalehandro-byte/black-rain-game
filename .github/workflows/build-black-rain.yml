@@ -11,6 +11,10 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,10 +24,10 @@ jobs:
         with:
           distribution: temurin
           java-version: '17'
-          run: /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/usr/local/lib/android/sdk 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Install Android SDK 35
-        run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
+        run: |
+          /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --sdk_root=/usr/local/lib/android/sdk 'platforms;android-35' 'build-tools;35.0.0'
 
       - name: Extract Android project archive
         run: unzip -o BLACK_RAIN_GAME_GITHUB_READY.zip -d build-source
@@ -38,3 +42,4 @@ jobs:
           name: BLACK-RAIN-GAME-APK
           path: build-source/Black_Rain_Android_Project/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+          
